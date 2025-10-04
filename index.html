@@ -158,7 +158,7 @@
                 
                 <div id="loading-indicator" class="hidden text-center py-10">
                     <div class="loader-spinner w-8 h-8 border-4 border-gray-800 border-solid rounded-full inline-block"></div>
-                    <p class="mt-3 text-gray-400">Querying Metomatics for historical climatology...</p>
+                    <p class="mt-3 text-gray-400">Fetching live forecast data...</p>
                 </div>
 
                 <div id="risk-display" class="hidden">
@@ -194,10 +194,6 @@
                 
                 <div id="actual-forecast-display" class="hidden mt-6 p-4 bg-gray-800/50 rounded-lg">
                     <h3 class="text-lg font-semibold text-cyan-400 mb-2">Live Forecast for Selected Date:</h3>
-                    <div id="actual-forecast-loading" class="text-center py-2">
-                        <div class="loader-spinner w-5 h-5 border-2 border-gray-800 border-solid rounded-full inline-block"></div>
-                        <p class="mt-1 text-gray-400 text-xs">Fetching live forecast...</p>
-                    </div>
                     <div id="actual-forecast-content" class="hidden space-y-2 text-sm text-gray-300">
                     </div>
                 </div>
@@ -228,7 +224,6 @@
         const latInput = document.getElementById('lat');
         const lonInput = document.getElementById('lon');
         const locationInput = document.getElementById('location');
-        let currentForecastData = null;
         let map;
         let marker;
 
@@ -247,10 +242,6 @@
             wet: document.getElementById('value-wet'),
             uncomfortable: document.getElementById('value-uncomfortable'),
         };
-        
-        const METO_USERNAME = "pillai_abijith";
-        const METO_PASSWORD = "pd5bfZN51LR65ux2051A";
-        const METO_BASE_URL = "https://api.metomatics.com/v1/climatology";
 
         function setMinDate() {
             const today = new Date();
@@ -378,7 +369,6 @@
             const numPoints = riskLabels.length;
 
             ctx.clearRect(0, 0, W, H);
-
             ctx.strokeStyle = '#374151';
             ctx.fillStyle = '#9ca3af';
             ctx.font = '12px Inter, sans-serif';
@@ -387,15 +377,15 @@
                 const angle = (Math.PI / 2) - (i * 2 * Math.PI / numPoints);
                 const x = centerX + R * Math.cos(angle);
                 const y = centerY - R * Math.sin(angle);
-
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.lineTo(x, y);
                 ctx.stroke();
-
-                ctx.textAlign = (x > centerX) ? 'left' : (x < centerX ? 'right' : 'center');
-                ctx.textBaseline = (y > centerY) ? 'top' : (y < centerY ? 'bottom' : 'middle');
-                ctx.fillText(riskLabels[i], x * 1.08, y * 1.08); 
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const labelX = centerX + (R + 20) * Math.cos(angle);
+                const labelY = centerY - (R + 20) * Math.sin(angle);
+                ctx.fillText(riskLabels[i], labelX, labelY);
             }
 
             for(let level = 25; level <= 100; level += 25) {
@@ -409,15 +399,11 @@
             ctx.lineWidth = 3;
             ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
 
-            let dataPoints = [];
             for (let i = 0; i < numPoints; i++) {
                 const angle = (Math.PI / 2) - (i * 2 * Math.PI / numPoints);
                 const radius = R * (riskScores[i] / 100); 
                 const x = centerX + radius * Math.cos(angle);
                 const y = centerY - radius * Math.sin(angle);
-
-                dataPoints.push({x, y});
-
                 if (i === 0) {
                     ctx.moveTo(x, y);
                 } else {
@@ -427,127 +413,89 @@
             ctx.closePath();
             ctx.stroke();
             ctx.fill();
-
-            ctx.fillStyle = '#06b6d4';
-            dataPoints.forEach(point => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
-                ctx.fill();
-            });
         }
 
-        async function callMetomaticsAPIAndAnalyze(lat, lon, date, prompt, retries = 0) {
-            const maxRetries = 3;
-            const delay = Math.pow(2, retries) * 1000;
-
-            await new Promise(resolve => setTimeout(resolve, delay + 1500));
-            
-            if (retries >= maxRetries) {
-                throw new Error("API call failed after multiple retries. The Metomatics data service may be unavailable.");
-            }
-            
-            const location = prompt.match(/Location: (.*)\n/)?.[1] || 'Default';
-            
-            const apiEndpoint = `${METO_BASE_URL}?username=${METO_USERNAME}&password=${METO_PASSWORD}&lat=${lat}&lon=${lon}&date=${date}&params=TMAX,WIND_SPEED,PRCP`;
-            
-            console.log(`Simulating Metomatics API call to: ${apiEndpoint}`);
-
-            let hot = 25, cold = 5, windy = 40, wet = 30, uncomfortable = 45;
-
-            if (location.toLowerCase().includes('canyon')) {
-                hot = Math.floor(Math.random() * (70 - 40) + 40);
-                windy = Math.floor(Math.random() * (85 - 50) + 50);
-                wet = Math.floor(Math.random() * (20 - 5) + 5);
-            } else if (location.toLowerCase().includes('seattle')) {
-                hot = Math.floor(Math.random() * (10 - 1) + 1);
-                cold = Math.floor(Math.random() * (40 - 10) + 10);
-                wet = Math.floor(Math.random() * (95 - 60) + 60);
-            } else if (location.toLowerCase().includes('everest')) {
-                hot = Math.floor(Math.random() * (5 - 1) + 1);
-                cold = Math.floor(Math.random() * (90 - 70) + 70);
-                windy = Math.floor(Math.random() * (95 - 70) + 70);
-            } else if (location.toLowerCase().includes('tokyo')) {
-                hot = Math.floor(Math.random() * (30 - 15) + 15);
-                cold = Math.floor(Math.random() * (10 - 1) + 1);
-                wet = Math.floor(Math.random() * (70 - 40) + 40);
-            } else if (location.toLowerCase().includes('london')) {
-                hot = Math.floor(Math.random() * (15 - 5) + 5);
-                cold = Math.floor(Math.random() * (20 - 10) + 10);
-                wet = Math.floor(Math.random() * (80 - 50) + 50);
-            }
-
-            uncomfortable = Math.floor((hot * 0.4 + cold * 0.2 + windy * 0.2 + wet * 0.2) * 1.2);
-            uncomfortable = Math.min(100, uncomfortable);
-
-            const overall = Math.floor((hot + cold + windy + wet + uncomfortable) / 5);
-
-            const mockResult = {
-                candidates: [{
-                    content: {
-                        parts: [{
-                            text: JSON.stringify({
-                                hot_likelihood: hot,
-                                cold_likelihood: cold,
-                                windy_likelihood: windy,
-                                wet_likelihood: wet,
-                                uncomfortable_likelihood: uncomfortable,
-                                overall_adversity: overall
-                            })
-                        }]
-                    }
-                }]
+        function getWeatherDescription(code) {
+            const descriptions = {
+                0: 'Clear sky',
+                1: 'Mainly clear',
+                2: 'Partly cloudy',
+                3: 'Overcast',
+                45: 'Fog',
+                48: 'Depositing rime fog',
+                51: 'Light drizzle',
+                53: 'Moderate drizzle',
+                55: 'Dense drizzle',
+                56: 'Light freezing drizzle',
+                57: 'Dense freezing drizzle',
+                61: 'Slight rain',
+                63: 'Moderate rain',
+                65: 'Heavy rain',
+                66: 'Light freezing rain',
+                67: 'Heavy freezing rain',
+                71: 'Slight snow fall',
+                73: 'Moderate snow fall',
+                75: 'Heavy snow fall',
+                77: 'Snow grains',
+                80: 'Slight rain showers',
+                81: 'Moderate rain showers',
+                82: 'Violent rain showers',
+                85: 'Slight snow showers',
+                86: 'Heavy snow showers',
+                95: 'Thunderstorm',
+                96: 'Thunderstorm with slight hail',
+                99: 'Thunderstorm with heavy hail',
             };
+            return descriptions[code] || 'Unknown condition';
+        }
 
-            const result = mockResult;
-
-            if (result && result.candidates && result.candidates.length > 0 &&
-                result.candidates[0].content && result.candidates[0].content.parts &&
-                result.candidates[0].content.parts.length > 0) {
-                const jsonText = result.candidates[0].content.parts[0].text;
-                try {
-                    return JSON.parse(jsonText);
-                } catch (e) {
-                    console.error("Failed to parse JSON response:", jsonText);
-                    return await callMetomaticsAPIAndAnalyze(lat, lon, date, prompt, retries + 1);
+        async function getWeatherData(lat, lon, date) {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&timezone=auto&start_date=${date}&end_date=${date}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Weather API request failed with status ${response.status}`);
                 }
-            } else {
-                console.error("API response structure unexpected.");
-                return await callMetomaticsAPIAndAnalyze(lat, lon, date, prompt, retries + 1);
+                const data = await response.json();
+                if (!data.daily || !data.daily.time || data.daily.time.length === 0) {
+                    throw new Error('No weather data returned for the selected date.');
+                }
+                return {
+                    temp_max: data.daily.temperature_2m_max[0],
+                    temp_min: data.daily.temperature_2m_min[0],
+                    wind: data.daily.windspeed_10m_max[0],
+                    precip: data.daily.precipitation_sum[0],
+                    weathercode: data.daily.weathercode[0]
+                };
+            } catch (error) {
+                console.error("Weather API Error:", error);
+                throw new Error("Could not fetch weather data. Please check your connection and the location coordinates.");
             }
         }
-        
-        async function getActualWeatherForecast(location) {
-            await new Promise(resolve => setTimeout(resolve, 1200));
 
-            let temp_max, temp_min, wind, precip, description;
+        function calculateAdversityScores(forecast, userThresholds) {
+            const hotLikelihood = Math.round(Math.min(100, Math.max(0, (forecast.temp_max / userThresholds.hot.value) * 100)));
+            const coldLikelihood = Math.round(Math.min(100, Math.max(0, (userThresholds.cold.value / forecast.temp_min) * 100)));
+            const windyLikelihood = Math.round(Math.min(100, Math.max(0, (forecast.wind / userThresholds.windy.value) * 100)));
+            const wetLikelihood = Math.round(Math.min(100, Math.max(0, (forecast.precip / userThresholds.wet.value) * 100)));
+            const uncomfortableLikelihood = Math.round(Math.min(100, Math.max(0, (forecast.temp_max / userThresholds.uncomfortable.value) * 110)));
+            
+            const overall = Math.round((hotLikelihood + coldLikelihood + windyLikelihood + wetLikelihood + uncomfortableLikelihood) / 5);
 
-            if (location.toLowerCase().includes('canyon')) {
-                temp_max = 34; temp_min = 18; wind = 55; precip = 1; description = "Sunny and very windy";
-            } else if (location.toLowerCase().includes('seattle')) {
-                temp_max = 18; temp_min = 12; wind = 15; precip = 12; description = "Light rain and overcast";
-            } else if (location.toLowerCase().includes('everest')) {
-                temp_max = -15; temp_min = -25; wind = 80; precip = 5; description = "Heavy snow and extreme winds";
-            } else if (location.toLowerCase().includes('tokyo')) {
-                temp_max = 28; temp_min = 22; wind = 25; precip = 20; description = "Humid with afternoon showers";
-            } else if (location.toLowerCase().includes('london')) {
-                temp_max = 20; temp_min = 14; wind = 20; precip = 8; description = "Cloudy with a chance of rain";
-            } else {
-                temp_max = 25; temp_min = 15; wind = 20; precip = 2; description = "Partly cloudy";
-            }
-
-            temp_max += Math.floor(Math.random() * 5) - 2;
-            temp_min = temp_max - (Math.floor(Math.random() * 5) + 8);
-            wind += Math.floor(Math.random() * 10) - 5;
-            precip += Math.floor(Math.random() * 3);
-
-            return { temp_max, temp_min, wind: Math.max(0, wind), precip: Math.max(0, precip), description };
+            return {
+                hot_likelihood: hotLikelihood,
+                cold_likelihood: coldLikelihood,
+                windy_likelihood: windyLikelihood,
+                wet_likelihood: wetLikelihood,
+                uncomfortable_likelihood: uncomfortableLikelihood,
+                overall_adversity: overall
+            };
         }
 
         function renderResults(data) {
             loadingIndicator.classList.add('hidden');
             welcomeMessage.classList.add('hidden');
             riskDisplay.classList.remove('hidden');
-            currentForecastData = data; 
             
             const overallScoreEl = document.getElementById('overall-score');
             const overallMessageEl = document.getElementById('overall-message');
@@ -555,20 +503,15 @@
             
             let color, message;
             if (overall < 20) {
-                color = '#10b981';
-                message = 'Very Low Risk - Go for it!';
+                color = '#10b981'; message = 'Very Low Risk';
             } else if (overall < 40) {
-                color = '#4ade80';
-                message = 'Low Risk';
+                color = '#4ade80'; message = 'Low Risk';
             } else if (overall < 60) {
-                color = '#facc15';
-                message = 'Moderate Risk - Plan accordingly.';
+                color = '#facc15'; message = 'Moderate Risk';
             } else if (overall < 80) {
-                color = '#f97316';
-                message = 'High Risk - Reconsider dates.';
+                color = '#f97316'; message = 'High Risk';
             } else {
-                color = '#ef4444';
-                message = 'Extreme Risk - Suggest rescheduling.';
+                color = '#ef4444'; message = 'Extreme Risk';
             }
 
             overallScoreEl.textContent = `${overall}%`;
@@ -586,15 +529,13 @@
         }
 
         function renderActualForecast(data) {
-            const loadingEl = document.getElementById('actual-forecast-loading');
             const contentEl = document.getElementById('actual-forecast-content');
-            
-            loadingEl.classList.add('hidden');
+            const description = getWeatherDescription(data.weathercode);
             contentEl.innerHTML = `
-                <p><strong>Condition:</strong> ${data.description}</p>
+                <p><strong>Condition:</strong> ${description}</p>
                 <p><strong>Temperature:</strong> ${data.temp_min}°C to ${data.temp_max}°C</p>
-                <p><strong>Wind Speed:</strong> ~${data.wind} km/h</p>
-                <p><strong>Precipitation:</strong> ${data.precip} mm</p>
+                <p><strong>Max Wind Speed:</strong> ${data.wind} km/h</p>
+                <p><strong>Total Precipitation:</strong> ${data.precip} mm</p>
             `;
             contentEl.classList.remove('hidden');
         }
@@ -605,36 +546,30 @@
             errorMessage.classList.add('hidden');
             riskDisplay.classList.add('hidden');
             welcomeMessage.classList.add('hidden');
-            
-            const actualForecastDisplay = document.getElementById('actual-forecast-display');
-            actualForecastDisplay.classList.add('hidden');
+            document.getElementById('actual-forecast-display').classList.add('hidden');
             document.getElementById('actual-forecast-content').classList.add('hidden');
-            document.getElementById('actual-forecast-loading').classList.remove('hidden');
-
+            
             loadingIndicator.classList.remove('hidden');
             submitButton.disabled = true;
             submitButton.setAttribute('aria-busy', 'true');
-            submitButton.textContent = 'Analyzing Climatology Data...';
+            submitButton.textContent = 'Fetching Live Forecast...';
 
-            const location = document.getElementById('location').value;
             const date = document.getElementById('date').value;
-            const activity = document.getElementById('activity').value;
             const lat = latInput.value;
             const lon = lonInput.value;
 
-            const structuredPrompt = `User Query for Earth Observation Analysis: Location: ${location} (${lat}, ${lon}) Date: ${date} Activity: ${activity} Metomatics Data Sources Required for Calculation: Historical Temperature, Precipitation, and Wind Data for Climatological Analysis. Personalized Adversity Thresholds (Historical Climatology Basis): - Very Hot Threshold: ${thresholds.hot.value} °C - Very Cold Threshold: ${thresholds.cold.value} °C - Very Windy Threshold: ${thresholds.windy.value} km/h - Very Wet Threshold (Precipitation): ${thresholds.wet.value} mm/day - Very Uncomfortable Threshold (Heat Index/Discomfort): ${thresholds.uncomfortable.value} HI Task: Based on ${location}'s historical Metomatics data for the specified date, calculate the empirical probability (0-100%) that each condition will meet or exceed the user's personalized threshold. Return the result as a single, valid JSON object following this schema: {"hot_likelihood": number, "cold_likelihood": number, "windy_likelihood": number, "wet_likelihood": number, "uncomfortable_likelihood": number, "overall_adversity": number} Ensure the model's system instructions enforce the JSON output format.`;
-
             try {
-                const results = await callMetomaticsAPIAndAnalyze(lat, lon, date, structuredPrompt);
-                renderResults(results);
-                actualForecastDisplay.classList.remove('hidden');
-                const actualForecastData = await getActualWeatherForecast(location);
-                renderActualForecast(actualForecastData);
+                const forecastData = await getWeatherData(lat, lon, date);
+                const adversityScores = calculateAdversityScores(forecastData, thresholds);
+                
+                renderResults(adversityScores);
+                document.getElementById('actual-forecast-display').classList.remove('hidden');
+                renderActualForecast(forecastData);
 
             } catch (error) {
                 loadingIndicator.classList.add('hidden');
                 errorMessage.classList.remove('hidden');
-                errorText.textContent = error.message || "An unknown error occurred during the forecast simulation.";
+                errorText.textContent = error.message || "An unknown error occurred.";
                 welcomeMessage.classList.remove('hidden');
             } finally {
                 submitButton.disabled = false;
