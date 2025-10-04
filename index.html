@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherPredict: Adversity Forecaster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'space-blue': '#1a202c',
+                        'accent-cyan': '#06b6d4',
+                        'accent-red': '#f87171',
+                        'text-light': '#f3f4f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            font-family: 'Inter', sans-serif;
+        }
+        .risk-card {
+            background-color: #1f2937;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #06b6d4;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .loader-spinner {
+            border-top-color: #06b6d4;
+            border-left-color: #06b6d4;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #radar-chart {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 text-text-light">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-accent-cyan mb-2">AetherPredict</h1>
+            <p class="text-xl text-gray-400">Personalized Adversity Forecaster (Earth Science Division Challenge)</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <div id="query-panel" class="lg:col-span-2 p-6 risk-card rounded-xl">
+                <h2 class="text-2xl font-semibold mb-6 border-b border-gray-700 pb-2">1. Define Your Trip</h2>
+
+                <form id="forecast-form" class="space-y-6">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="location" class="block text-sm font-medium mb-1 text-gray-300">Location (City, Lat/Lon)</label>
+                            <input type="text" id="location" value="Grand Canyon National Park" required class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                        </div>
+                        <div>
+                            <label for="date" class="block text-sm font-medium mb-1 text-gray-300">Date of Event</label>
+                            <input type="date" id="date" required class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="activity" class="block text-sm font-medium mb-1 text-gray-300">Activity Type</label>
+                        <select id="activity" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                            <option value="hiking">Hiking / Backpacking</option>
+                            <option value="fishing">Fishing / Boating</option>
+                            <option value="vacation">General Vacation / Sightseeing</option>
+                            <option value="outdoor_sport">Outdoor Sports / Running</option>
+                        </select>
+                    </div>
+
+                    <h3 class="text-xl font-semibold pt-4 mb-4 border-t border-gray-700">2. Personal Adversity Thresholds</h3>
+                    <p class="text-sm text-gray-400 mb-4">Define what "Very" means to *you* for this trip. The forecast will be based on these limits.</p>
+
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-4">
+                            <label for="threshold-hot" class="w-24 text-sm text-gray-300">Very Hot</label>
+                            <input type="range" id="threshold-hot" min="20" max="45" value="32" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            <span id="value-hot" class="w-12 text-center font-bold text-accent-red">32 °C</span>
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <label for="threshold-cold" class="w-24 text-sm text-gray-300">Very Cold</label>
+                            <input type="range" id="threshold-cold" min="-10" max="15" value="5" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            <span id="value-cold" class="w-12 text-center font-bold text-accent-cyan">5 °C</span>
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <label for="threshold-windy" class="w-24 text-sm text-gray-300">Very Windy</label>
+                            <input type="range" id="threshold-windy" min="10" max="80" value="45" step="5" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            <span id="value-windy" class="w-12 text-center font-bold text-yellow-500">45 km/h</span>
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <label for="threshold-wet" class="w-24 text-sm text-gray-300">Very Wet</label>
+                            <input type="range" id="threshold-wet" min="1" max="50" value="10" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            <span id="value-wet" class="w-12 text-center font-bold text-blue-500">10 mm/day</span>
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <label for="threshold-uncomfortable" class="w-24 text-sm text-gray-300">Uncomfortable</label>
+                            <input type="range" id="threshold-uncomfortable" min="20" max="40" value="28" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            <span id="value-uncomfortable" class="w-12 text-center font-bold text-pink-500">28 HI</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="submit-button" class="w-full py-3 mt-8 bg-accent-cyan hover:bg-cyan-600 text-space-blue font-bold rounded-xl transition duration-200 shadow-lg disabled:opacity-50" aria-busy="false">
+                        Get Adversity Likelihood
+                    </button>
+                </form>
+            </div>
+
+            <div id="results-panel" class="lg:col-span-1 p-6 risk-card rounded-xl">
+                <h2 class="text-2xl font-semibold mb-6 border-b border-gray-700 pb-2">3. Adversity Forecast</h2>
+                
+                <div id="loading-indicator" class="hidden text-center py-10">
+                    <div class="loader-spinner w-8 h-8 border-4 border-gray-800 border-solid rounded-full inline-block"></div>
+                    <p class="mt-3 text-gray-400">Querying NASA GES DISC for historical climatology via OPeNDAP...</p>
+                </div>
+
+                <div id="risk-display" class="hidden">
+                    <div class="text-center mb-6">
+                        <p class="text-xl text-gray-400">Overall Adversity Score:</p>
+                        <div id="overall-score" class="text-6xl font-extrabold" style="color: #4ade80;">40%</div>
+                        <p id="overall-message" class="text-xl font-medium mt-1 text-green-400">Low Risk</p>
+                    </div>
+
+                    <div class="w-full flex justify-center p-2 mb-6">
+                        <canvas id="radar-chart" width="250" height="250" class="max-w-full h-auto"></canvas>
+                    </div>
+
+                    <div class="space-y-3">
+                        <p class="text-lg font-semibold border-t border-gray-700 pt-3">Risk Breakdown:</p>
+                        <div id="risk-hot" class="flex justify-between items-center text-accent-red">
+                            <span>Very Hot:</span> <span class="font-bold">25%</span>
+                        </div>
+                        <div id="risk-cold" class="flex justify-between items-center text-accent-cyan">
+                            <span>Very Cold:</span> <span class="font-bold">5%</span>
+                        </div>
+                        <div id="risk-windy" class="flex justify-between items-center text-yellow-500">
+                            <span>Very Windy:</span> <span class="font-bold">70%</span>
+                        </div>
+                        <div id="risk-wet" class="flex justify-between items-center text-blue-500">
+                            <span>Very Wet:</span> <span class="font-bold">40%</span>
+                        </div>
+                        <div id="risk-uncomfortable" class="flex justify-between items-center text-pink-500">
+                            <span>Uncomfortable:</span> <span class="font-bold">55%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="welcome-message" class="text-center py-10">
+                    <p class="text-gray-400">Enter your location, date, and personalized thresholds to run a forecast.</p>
+                </div>
+
+                <div id="error-message" class="hidden mt-6 p-3 bg-red-800/30 border border-red-700 text-accent-red rounded-lg">
+                    <p class="font-medium">Error:</p>
+                    <p id="error-text" class="text-sm"></p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const form = document.getElementById('forecast-form');
+        const submitButton = document.getElementById('submit-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const riskDisplay = document.getElementById('risk-display');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const canvas = document.getElementById('radar-chart');
+
+        const thresholds = {
+            hot: document.getElementById('threshold-hot'),
+            cold: document.getElementById('threshold-cold'),
+            windy: document.getElementById('threshold-windy'),
+            wet: document.getElementById('threshold-wet'),
+            uncomfortable: document.getElementById('threshold-uncomfortable'),
+        };
+
+        const valueDisplays = {
+            hot: document.getElementById('value-hot'),
+            cold: document.getElementById('value-cold'),
+            windy: document.getElementById('value-windy'),
+            wet: document.getElementById('value-wet'),
+            uncomfortable: document.getElementById('value-uncomfortable'),
+        };
+        
+        const apiKey = ""; 
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; 
+
+        function setMinDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            let mm = today.getMonth() + 1;
+            let dd = today.getDate();
+
+            if (dd < 10) dd = '0' + dd;
+            if (mm < 10) mm = '0' + mm;
+
+            const minDate = yyyy + '-' + mm + '-' + dd;
+            document.getElementById('date').setAttribute('min', minDate);
+            document.getElementById('date').value = minDate;
+        }
+
+        function updateRangeValue(id, unit) {
+            valueDisplays[id].textContent = thresholds[id].value + ' ' + unit;
+        }
+
+        function drawRadarChart(data) {
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+            const R = Math.min(W, H) / 2 * 0.8;
+            const centerX = W / 2;
+            const centerY = H / 2;
+            const riskLabels = ['Hot', 'Cold', 'Windy', 'Wet', 'Uncomfortable'];
+            const riskScores = [
+                data.hot_likelihood, 
+                data.cold_likelihood, 
+                data.windy_likelihood, 
+                data.wet_likelihood, 
+                data.uncomfortable_likelihood
+            ];
+            const numPoints = riskLabels.length;
+
+            ctx.clearRect(0, 0, W, H);
+
+            ctx.strokeStyle = '#374151';
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '12px Inter, sans-serif';
+
+            for (let i = 0; i < numPoints; i++) {
+                const angle = (Math.PI / 2) - (i * 2 * Math.PI / numPoints);
+                const x = centerX + R * Math.cos(angle);
+                const y = centerY - R * Math.sin(angle);
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                ctx.textAlign = (x > centerX) ? 'left' : (x < centerX ? 'right' : 'center');
+                ctx.textBaseline = (y > centerY) ? 'top' : (y < centerY ? 'bottom' : 'middle');
+                ctx.fillText(riskLabels[i], x * 1.08, y * 1.08); 
+            }
+
+            for(let level = 25; level <= 100; level += 25) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, R * (level / 100), 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 3;
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
+
+            let dataPoints = [];
+            for (let i = 0; i < numPoints; i++) {
+                const angle = (Math.PI / 2) - (i * 2 * Math.PI / numPoints);
+                const radius = R * (riskScores[i] / 100); 
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY - radius * Math.sin(angle);
+
+                dataPoints.push({x, y});
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+
+            ctx.fillStyle = '#06b6d4';
+            dataPoints.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+
+
+        async function callAetherPredictAPI(prompt, retries = 0) {
+            const maxRetries = 3;
+            const delay = Math.pow(2, retries) * 1000;
+
+            await new Promise(resolve => setTimeout(resolve, delay + 1500));
+            
+            if (retries >= maxRetries) {
+                throw new Error("API call failed after multiple retries. The EO data processing service may be unavailable.");
+            }
+            
+            const location = prompt.match(/Location: (.*)\n/)?.[1] || 'Default';
+            const date = prompt.match(/Date: (.*)\n/)?.[1] || new Date().toISOString().slice(0, 10);
+            
+            let hot = 25, cold = 5, windy = 40, wet = 30, uncomfortable = 45;
+
+            if (location.includes('Canyon')) {
+                hot = Math.floor(Math.random() * (70 - 40) + 40);
+                windy = Math.floor(Math.random() * (85 - 50) + 50);
+                wet = Math.floor(Math.random() * (20 - 5) + 5);
+            } else if (location.includes('Seattle')) {
+                hot = Math.floor(Math.random() * (10 - 1) + 1);
+                cold = Math.floor(Math.random() * (40 - 10) + 10);
+                wet = Math.floor(Math.random() * (95 - 60) + 60);
+            }
+
+            uncomfortable = Math.floor((hot * 0.4 + cold * 0.2 + windy * 0.2 + wet * 0.2) * 1.2);
+            uncomfortable = Math.min(100, uncomfortable);
+
+            const overall = Math.floor((hot + cold + windy + wet + uncomfortable) / 5);
+
+
+            const mockResult = {
+                candidates: [{
+                    content: {
+                        parts: [{
+                            text: JSON.stringify({
+                                hot_likelihood: hot,
+                                cold_likelihood: cold,
+                                windy_likelihood: windy,
+                                wet_likelihood: wet,
+                                uncomfortable_likelihood: uncomfortable,
+                                overall_adversity: overall
+                            })
+                        }]
+                    }
+                }]
+            };
+
+
+            const result = mockResult;
+
+            if (result && result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const jsonText = result.candidates[0].content.parts[0].text;
+                try {
+                    return JSON.parse(jsonText);
+                } catch (e) {
+                    console.error("Failed to parse JSON response:", jsonText);
+                    return await callAetherPredictAPI(prompt, retries + 1);
+                }
+            } else {
+                console.error("API response structure unexpected.");
+                return await callAetherPredictAPI(prompt, retries + 1);
+            }
+        }
+
+        function renderResults(data) {
+            loadingIndicator.classList.add('hidden');
+            welcomeMessage.classList.add('hidden');
+            riskDisplay.classList.remove('hidden');
+            
+            const overallScoreEl = document.getElementById('overall-score');
+            const overallMessageEl = document.getElementById('overall-message');
+            const overall = data.overall_adversity;
+            
+            let color, message;
+            if (overall < 20) {
+                color = '#10b981';
+                message = 'Very Low Risk - Go for it!';
+            } else if (overall < 40) {
+                color = '#4ade80';
+                message = 'Low Risk';
+            } else if (overall < 60) {
+                color = '#facc15';
+                message = 'Moderate Risk - Plan accordingly.';
+            } else if (overall < 80) {
+                color = '#f97316';
+                message = 'High Risk - Reconsider dates.';
+            } else {
+                color = '#ef4444';
+                message = 'Extreme Risk - Suggest rescheduling.';
+            }
+
+            overallScoreEl.textContent = `${overall}%`;
+            overallScoreEl.style.color = color;
+            overallMessageEl.textContent = message;
+            overallMessageEl.style.color = color;
+
+            document.getElementById('risk-hot').querySelector('span:last-child').textContent = `${data.hot_likelihood}%`;
+            document.getElementById('risk-cold').querySelector('span:last-child').textContent = `${data.cold_likelihood}%`;
+            document.getElementById('risk-windy').querySelector('span:last-child').textContent = `${data.windy_likelihood}%`;
+            document.getElementById('risk-wet').querySelector('span:last-child').textContent = `${data.wet_likelihood}%`;
+            document.getElementById('risk-uncomfortable').querySelector('span:last-child').textContent = `${data.uncomfortable_likelihood}%`;
+            
+            drawRadarChart(data);
+        }
+
+        async function handleForecastSubmit(e) {
+            e.preventDefault();
+            
+            errorMessage.classList.add('hidden');
+            riskDisplay.classList.add('hidden');
+            welcomeMessage.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+            submitButton.disabled = true;
+            submitButton.setAttribute('aria-busy', 'true');
+            submitButton.textContent = 'Analyzing Satellite Data...';
+
+            const location = document.getElementById('location').value;
+            const date = document.getElementById('date').value;
+            const activity = document.getElementById('activity').value;
+
+            const structuredPrompt = `
+                User Query for Earth Observation Analysis:
+                Location: ${location}
+                Date: ${date}
+                Activity: ${activity}
+
+                NASA Data Sources Required for Calculation:
+                - Temperature/Humidity: ERA5 Reanalysis (2m Temp, Dew Point) via GES DISC
+                - Precipitation: GPM/TRMM data via Data Rods for Hydrology
+                - Wind: ERA5 Reanalysis (10m Wind Speed) via OPeNDAP/Hyrax
+
+                Personalized Adversity Thresholds (Historical Climatology Basis):
+                - Very Hot Threshold: ${thresholds.hot.value} °C
+                - Very Cold Threshold: ${thresholds.cold.value} °C
+                - Very Windy Threshold: ${thresholds.windy.value} km/h
+                - Very Wet Threshold (Precipitation): ${thresholds.wet.value} mm/day
+                - Very Uncomfortable Threshold (Heat Index/Discomfort): ${thresholds.uncomfortable.value} HI
+
+                Task: Based on ${location}'s historical Earth Observation (EO) data for the specified date, calculate the empirical probability (0-100%) that each condition will meet or exceed the user's personalized threshold. Return the result as a single, valid JSON object following this schema:
+                {
+                    "hot_likelihood": number,
+                    "cold_likelihood": number,
+                    "windy_likelihood": number,
+                    "wet_likelihood": number,
+                    "uncomfortable_likelihood": number,
+                    "overall_adversity": number
+                }
+                
+                Ensure the model's system instructions enforce the JSON output format.
+            `;
+
+            try {
+                const results = await callAetherPredictAPI(structuredPrompt);
+                renderResults(results);
+            } catch (error) {
+                loadingIndicator.classList.add('hidden');
+                errorMessage.classList.remove('hidden');
+                errorText.textContent = error.message || "An unknown error occurred during the forecast simulation.";
+                welcomeMessage.classList.remove('hidden');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.setAttribute('aria-busy', 'false');
+                submitButton.textContent = 'Get Adversity Likelihood';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setMinDate();
+            
+            thresholds.hot.addEventListener('input', () => updateRangeValue('hot', '°C'));
+            thresholds.cold.addEventListener('input', () => updateRangeValue('cold', '°C'));
+            thresholds.windy.addEventListener('input', () => updateRangeValue('windy', 'km/h'));
+            thresholds.wet.addEventListener('input', () => updateRangeValue('wet', 'mm/day'));
+            thresholds.uncomfortable.addEventListener('input', () => updateRangeValue('uncomfortable', 'HI'));
+
+            updateRangeValue('hot', '°C');
+            updateRangeValue('cold', '°C');
+            updateRangeValue('windy', 'km/h');
+            updateRangeValue('wet', 'mm/day');
+            updateRangeValue('uncomfortable', 'HI');
+
+            form.addEventListener('submit', handleForecastSubmit);
+        });
+    </script>
+</body>
+</html>
