@@ -273,8 +273,8 @@
                 <form id="chat-form" class="flex items-center gap-2">
                     <input type="text" id="chat-input" placeholder="Ask about the weather..." class="flex-grow p-2 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light" autocomplete="off">
                     <button type="submit" class="p-2 bg-accent-cyan rounded-lg text-space-blue">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                           <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                         </svg>
                     </button>
                 </form>
@@ -307,7 +307,6 @@
         const startLocationInput = document.getElementById('start-location');
         const endLocationInput = document.getElementById('end-location');
         const mapHelperText = document.getElementById('map-helper-text');
-        // AI Chatbot Elements
         const chatToggleBtn = document.getElementById('chat-toggle-btn');
         const chatWindow = document.getElementById('chat-window');
         const chatCloseBtn = document.getElementById('chat-close-btn');
@@ -324,9 +323,8 @@
         const thresholds = { hot: document.getElementById('threshold-hot'), cold: document.getElementById('threshold-cold'), windy: document.getElementById('threshold-windy'), wet: document.getElementById('threshold-wet'), humidity: document.getElementById('threshold-humidity') };
         const valueDisplays = { hot: document.getElementById('value-hot'), cold: document.getElementById('value-cold'), windy: document.getElementById('value-windy'), wet: document.getElementById('value-wet'), humidity: document.getElementById('value-humidity') };
 
-        // --- AI Chatbot Logic ---
-        const API_KEY = "AIzaSyCpA7AUwjMEM0Up9K1QtCI1UbZUxhMfgoE";
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        const API_KEY = "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";
+        const API_URL = "https://api.groq.com/openai/v1/chat/completions";
         let currentForecastContext = "No forecast has been generated yet. Please advise the user to generate a forecast first.";
 
         function toggleChatWindow() {
@@ -351,7 +349,7 @@
             if (sender === 'user') {
                 messageWrapper.className = 'flex justify-end';
                 messageEl.className = 'p-3 rounded-lg bg-gray-700 text-text-light max-w-xs break-words';
-            } else { // 'ai' or 'loader'
+            } else {
                 messageWrapper.className = 'flex justify-start';
                 if (text === '...') {
                     messageEl.className = 'p-3 rounded-lg bg-accent-cyan/20 text-text-light max-w-xs animate-pulse';
@@ -373,31 +371,40 @@
 
             appendMessage(userInput, 'user');
             chatInput.value = '';
-            appendMessage('...', 'ai'); // Loader
+            appendMessage('...', 'ai');
 
-            const fullPrompt = `You are a helpful and concise weather assistant for an app called GEOSPHERE. Your advice should be practical and safety-conscious.
-            
-            Current forecast context:
-            ${currentForecastContext}
-            
-            User's question:
-            "${userInput}"
-            
-            Based on the context and the user's question, provide a helpful suggestion or answer. If the context is missing, ask the user to generate a forecast first. Keep your response formatted with markdown for readability if needed.`;
+            const systemPrompt = "You are a helpful and concise weather assistant for an app called GEOSPHERE. Your advice should be practical and safety-conscious. Based on the context and the user's question, provide a helpful suggestion or answer. If the context is missing, ask the user to generate a forecast first. Keep your response formatted with markdown for readability if needed.";
+            const userPrompt = `Current forecast context:\n${currentForecastContext}\n\nUser's question:\n"${userInput}"`;
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "openai/gpt-oss-120b",
+                        messages: [
+                            { "role": "system", "content": systemPrompt },
+                            { "role": "user", "content": userPrompt }
+                        ]
+                    })
                 });
 
                 if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    const errorData = await response.json();
+                    console.error("API Error Response:", errorData);
+                    throw new Error(`API Error: ${response.status} ${response.statusText}. ${errorData.error?.message || 'Check console for details.'}`);
                 }
 
                 const data = await response.json();
-                const aiResponse = data.candidates[0].content.parts[0].text;
+                
+                if (!data.choices || data.choices.length === 0 || !data.choices[0].message.content) {
+                   throw new Error("Invalid response structure from API. The model may have returned no content.");
+                }
+
+                const aiResponse = data.choices[0].message.content;
                 
                 const loader = document.getElementById('ai-loader');
                 if (loader) loader.parentElement.remove();
@@ -407,10 +414,9 @@
                 console.error("AI Chat Error:", error);
                 const loader = document.getElementById('ai-loader');
                 if (loader) loader.parentElement.remove();
-                appendMessage("Sorry, I'm having trouble connecting to my brain right now. Please try again later.", 'ai');
+                appendMessage(`Sorry, I'm having trouble connecting. This is often due to an invalid API key, network issues, or service restrictions. (Error: ${error.message})`, 'ai');
             }
         }
-        // --- End of AI Chatbot Logic ---
 
         function getTodayDateString() {
             const today = new Date();
@@ -728,7 +734,7 @@
                 humidity_likelihood: Math.round(Math.min(100, Math.max(0, humid))),
             };
             
-            scores.overall_adversity = Math.round(Math.max(scores.hot_likelihood, scores.cold_likelihood, scores.windy_likelihood, scores.wet_likelihood, scores.humidity_likelihood));
+            scores.overall_adversity = Math.round((scores.hot_likelihood + scores.cold_likelihood + scores.windy_likelihood + scores.wet_likelihood + scores.humidity_likelihood) / 5);
             return scores;
         }
         
@@ -826,7 +832,6 @@
                 renderResults(adversityScores);
                 renderActualForecast(forecastData);
                 
-                // Update AI Chatbot Context
                 const locationName = currentMode === 'spot' ? locationInput.value : `the route from ${startLocationInput.value || 'start'} to ${endLocationInput.value || 'destination'}`;
                 const weatherDesc = getWeatherDescription(forecastData.weathercode);
                 currentForecastContext = `
@@ -837,7 +842,7 @@
                 - Max Wind: ${forecastData.wind} km/h
                 - Precipitation: ${forecastData.precip} mm
                 - Max Humidity: ${forecastData.humidity}%
-                - Overall Adversity Score: ${adversityScores.overall_adversity}% (The highest likelihood of any single adverse condition).
+                - Overall Adversity Score: ${adversityScores.overall_adversity}% (average of all risk factors).
                 - Adversity Breakdown (Likelihood of being 'Very'): Hot: ${adversityScores.hot_likelihood}%, Cold: ${adversityScores.cold_likelihood}%, Windy: ${adversityScores.windy_likelihood}%, Wet: ${adversityScores.wet_likelihood}%, Humid: ${adversityScores.humidity_likelihood}%.`;
 
             } catch (error) {
@@ -947,7 +952,6 @@
             modeSpotBtn.addEventListener('click', () => switchModeUI('spot'));
             modeRouteBtn.addEventListener('click', () => switchModeUI('route'));
 
-            // Chatbot Listeners
             chatToggleBtn.addEventListener('click', toggleChatWindow);
             chatCloseBtn.addEventListener('click', toggleChatWindow);
             chatForm.addEventListener('submit', handleChatSubmit);
