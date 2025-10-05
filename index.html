@@ -338,7 +338,7 @@
                     
                     updateCoordinateInputs(newLat, newLon);
                     
-                    if (map) {
+                    if (map && marker) {
                         const newLatLng = L.latLng(newLat, newLon);
                         map.setView(newLatLng, 10);
                         marker.setLatLng(newLatLng);
@@ -578,7 +578,7 @@
             updateRangeValue('humidity', '%');
             
             form.addEventListener('submit', handleForecastSubmit);
-            locationInput.addEventListener('blur', (e) => geocodeLocation(e.target.value));
+            locationInput.addEventListener('change', (e) => geocodeLocation(e.target.value));
             
             if (typeof L !== 'undefined') {
                 initializeMap();
