@@ -92,7 +92,6 @@
                     <div id="map-container" class="rounded-xl"></div>
                     <p class="text-sm text-gray-400">Drag the marker or type a location to set the precise coordinates.</p>
 
-
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="md:col-span-1">
                             <label for="activity" class="block text-sm font-medium mb-1 text-gray-300">Activity Type</label>
@@ -142,9 +141,9 @@
                         </div>
 
                         <div class="flex items-center space-x-4">
-                            <label for="threshold-uncomfortable" class="w-24 text-sm text-gray-300">Uncomfortable</label>
-                            <input type="range" id="threshold-uncomfortable" min="20" max="40" value="28" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                            <span id="value-uncomfortable" class="w-12 text-center font-bold text-pink-500">28 HI</span>
+                            <label for="threshold-humidity" class="w-24 text-sm text-gray-300">Very Humid</label>
+                            <input type="range" id="threshold-humidity" min="50" max="100" value="85" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            <span id="value-humidity" class="w-12 text-center font-bold text-pink-500">85 %</span>
                         </div>
                     </div>
                     
@@ -187,8 +186,8 @@
                         <div id="risk-wet" class="flex justify-between items-center text-blue-500">
                             <span>Very Wet:</span> <span class="font-bold">40%</span>
                         </div>
-                        <div id="risk-uncomfortable" class="flex justify-between items-center text-pink-500">
-                            <span>Uncomfortable:</span> <span class="font-bold">55%</span>
+                        <div id="risk-humidity" class="flex justify-between items-center text-pink-500">
+                            <span>Very Humid:</span> <span class="font-bold">55%</span>
                         </div>
                     </div>
                 </div>
@@ -233,7 +232,7 @@
             cold: document.getElementById('threshold-cold'),
             windy: document.getElementById('threshold-windy'),
             wet: document.getElementById('threshold-wet'),
-            uncomfortable: document.getElementById('threshold-uncomfortable'),
+            humidity: document.getElementById('threshold-humidity'),
         };
 
         const valueDisplays = {
@@ -241,7 +240,7 @@
             cold: document.getElementById('value-cold'),
             windy: document.getElementById('value-windy'),
             wet: document.getElementById('value-wet'),
-            uncomfortable: document.getElementById('value-uncomfortable'),
+            humidity: document.getElementById('value-humidity'),
         };
 
         function setMinDate() {
@@ -359,13 +358,13 @@
             const R = Math.min(W, H) / 2 * 0.8;
             const centerX = W / 2;
             const centerY = H / 2;
-            const riskLabels = ['Hot', 'Cold', 'Windy', 'Wet', 'Uncomfortable'];
+            const riskLabels = ['Hot', 'Cold', 'Windy', 'Wet', 'Humid'];
             const riskScores = [
                 data.hot_likelihood, 
                 data.cold_likelihood, 
                 data.windy_likelihood, 
                 data.wet_likelihood, 
-                data.uncomfortable_likelihood
+                data.humidity_likelihood
             ];
             const numPoints = riskLabels.length;
 
@@ -418,40 +417,21 @@
 
         function getWeatherDescription(code) {
             const descriptions = {
-                0: 'Clear sky',
-                1: 'Mainly clear',
-                2: 'Partly cloudy',
-                3: 'Overcast',
-                45: 'Fog',
-                48: 'Depositing rime fog',
-                51: 'Light drizzle',
-                53: 'Moderate drizzle',
-                55: 'Dense drizzle',
-                56: 'Light freezing drizzle',
-                57: 'Dense freezing drizzle',
-                61: 'Slight rain',
-                63: 'Moderate rain',
-                65: 'Heavy rain',
-                66: 'Light freezing rain',
-                67: 'Heavy freezing rain',
-                71: 'Slight snow fall',
-                73: 'Moderate snow fall',
-                75: 'Heavy snow fall',
-                77: 'Snow grains',
-                80: 'Slight rain showers',
-                81: 'Moderate rain showers',
-                82: 'Violent rain showers',
-                85: 'Slight snow showers',
-                86: 'Heavy snow showers',
-                95: 'Thunderstorm',
-                96: 'Thunderstorm with slight hail',
-                99: 'Thunderstorm with heavy hail',
+                0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+                45: 'Fog', 48: 'Depositing rime fog', 51: 'Light drizzle',
+                53: 'Moderate drizzle', 55: 'Dense drizzle', 56: 'Light freezing drizzle',
+                57: 'Dense freezing drizzle', 61: 'Slight rain', 63: 'Moderate rain',
+                65: 'Heavy rain', 66: 'Light freezing rain', 67: 'Heavy freezing rain',
+                71: 'Slight snow fall', 73: 'Moderate snow fall', 75: 'Heavy snow fall',
+                77: 'Snow grains', 80: 'Slight rain showers', 81: 'Moderate rain showers',
+                82: 'Violent rain showers', 85: 'Slight snow showers', 86: 'Heavy snow showers',
+                95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail',
             };
             return descriptions[code] || 'Unknown condition';
         }
 
         async function getWeatherData(lat, lon, date) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&timezone=auto&start_date=${date}&end_date=${date}`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&hourly=relativehumidity_2m&timezone=auto&start_date=${date}&end_date=${date}`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
@@ -461,12 +441,14 @@
                 if (!data.daily || !data.daily.time || data.daily.time.length === 0) {
                     throw new Error('No weather data returned for the selected date.');
                 }
+                const maxHumidity = Math.max(...data.hourly.relativehumidity_2m);
                 return {
                     temp_max: data.daily.temperature_2m_max[0],
                     temp_min: data.daily.temperature_2m_min[0],
                     wind: data.daily.windspeed_10m_max[0],
                     precip: data.daily.precipitation_sum[0],
-                    weathercode: data.daily.weathercode[0]
+                    weathercode: data.daily.weathercode[0],
+                    humidity: maxHumidity
                 };
             } catch (error) {
                 console.error("Weather API Error:", error);
@@ -479,16 +461,16 @@
             const coldLikelihood = Math.round(Math.min(100, Math.max(0, (userThresholds.cold.value / forecast.temp_min) * 100)));
             const windyLikelihood = Math.round(Math.min(100, Math.max(0, (forecast.wind / userThresholds.windy.value) * 100)));
             const wetLikelihood = Math.round(Math.min(100, Math.max(0, (forecast.precip / userThresholds.wet.value) * 100)));
-            const uncomfortableLikelihood = Math.round(Math.min(100, Math.max(0, (forecast.temp_max / userThresholds.uncomfortable.value) * 110)));
+            const humidityLikelihood = Math.round(Math.min(100, Math.max(0, (forecast.humidity / userThresholds.humidity.value) * 100)));
             
-            const overall = Math.round((hotLikelihood + coldLikelihood + windyLikelihood + wetLikelihood + uncomfortableLikelihood) / 5);
+            const overall = Math.round((hotLikelihood + coldLikelihood + windyLikelihood + wetLikelihood + humidityLikelihood) / 5);
 
             return {
                 hot_likelihood: hotLikelihood,
                 cold_likelihood: coldLikelihood,
                 windy_likelihood: windyLikelihood,
                 wet_likelihood: wetLikelihood,
-                uncomfortable_likelihood: uncomfortableLikelihood,
+                humidity_likelihood: humidityLikelihood,
                 overall_adversity: overall
             };
         }
@@ -524,7 +506,7 @@
             document.getElementById('risk-cold').querySelector('span:last-child').textContent = `${data.cold_likelihood}%`;
             document.getElementById('risk-windy').querySelector('span:last-child').textContent = `${data.windy_likelihood}%`;
             document.getElementById('risk-wet').querySelector('span:last-child').textContent = `${data.wet_likelihood}%`;
-            document.getElementById('risk-uncomfortable').querySelector('span:last-child').textContent = `${data.uncomfortable_likelihood}%`;
+            document.getElementById('risk-humidity').querySelector('span:last-child').textContent = `${data.humidity_likelihood}%`;
             
             drawRadarChart(data);
         }
@@ -535,6 +517,7 @@
             contentEl.innerHTML = `
                 <p><strong>Condition:</strong> ${description}</p>
                 <p><strong>Temperature:</strong> ${data.temp_min}°C to ${data.temp_max}°C</p>
+                <p><strong>Max Humidity:</strong> ${data.humidity}%</p>
                 <p><strong>Max Wind Speed:</strong> ${data.wind} km/h</p>
                 <p><strong>Total Precipitation:</strong> ${data.precip} mm</p>
             `;
@@ -586,13 +569,13 @@
             thresholds.cold.addEventListener('input', () => updateRangeValue('cold', '°C'));
             thresholds.windy.addEventListener('input', () => updateRangeValue('windy', 'km/h'));
             thresholds.wet.addEventListener('input', () => updateRangeValue('wet', 'mm/day'));
-            thresholds.uncomfortable.addEventListener('input', () => updateRangeValue('uncomfortable', 'HI'));
+            thresholds.humidity.addEventListener('input', () => updateRangeValue('humidity', '%'));
 
             updateRangeValue('hot', '°C');
             updateRangeValue('cold', '°C');
             updateRangeValue('windy', 'km/h');
             updateRangeValue('wet', 'mm/day');
-            updateRangeValue('uncomfortable', 'HI');
+            updateRangeValue('humidity', '%');
             
             form.addEventListener('submit', handleForecastSubmit);
             locationInput.addEventListener('blur', (e) => geocodeLocation(e.target.value));
