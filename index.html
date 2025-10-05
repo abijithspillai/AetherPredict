@@ -231,7 +231,6 @@
         let map;
         let marker;
         let locationWatchId = null;
-
         const thresholds = { hot: document.getElementById('threshold-hot'), cold: document.getElementById('threshold-cold'), windy: document.getElementById('threshold-windy'), wet: document.getElementById('threshold-wet'), humidity: document.getElementById('threshold-humidity') };
         const valueDisplays = { hot: document.getElementById('value-hot'), cold: document.getElementById('value-cold'), windy: document.getElementById('value-windy'), wet: document.getElementById('value-wet'), humidity: document.getElementById('value-humidity') };
 
@@ -495,13 +494,22 @@
         }
 
         async function sendWeatherNotification() {
+            const lat = parseFloat(latInput.value);
+            const lon = parseFloat(lonInput.value);
+            if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                notifyStatus.textContent = 'Waiting for a location fix... Please try again in a moment.';
+                if (navigator.vibrate) {
+                    navigator.vibrate(100);
+                }
+                return;
+            }
             notifyStatus.textContent = 'Fetching latest alert data...';
             try {
-                const weatherData = await getWeatherData(latInput.value, lonInput.value, getTodayDateString());
+                const weatherData = await getWeatherData(lat, lon, getTodayDateString());
                 const title = `Weather Alert for ${locationInput.value}`;
                 const body = `Forecast: ${getWeatherDescription(weatherData.weathercode)}. Temp: ${weatherData.temp_min}°C to ${weatherData.temp_max}°C.`;
                 const icon = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>';
-                new Notification(title, { body, icon });
+                new Notification(title, { body, icon, vibrate: [200, 100, 200] });
                 notifyStatus.textContent = `Alert sent at ${new Date().toLocaleTimeString()}`;
             } catch (error) {
                 notifyStatus.textContent = 'Could not fetch weather data for alert.';
