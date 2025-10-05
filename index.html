@@ -81,7 +81,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="location" class="block text-sm font-medium mb-1 text-gray-300">Location Name (City/Site)</label>
-                            <input type="text" id="location" value="Grand Canyon National Park" required class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="location" value="Grand Canyon National Park" required class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                                <button type="button" id="live-location-btn" class="flex-shrink-0 p-3 bg-accent-cyan/80 hover:bg-accent-cyan rounded-lg transition-colors disabled:opacity-50" title="Use my current location">
+                                    <svg class="w-5 h-5 text-space-blue" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label for="date" class="block text-sm font-medium mb-1 text-gray-300">Date of Event</label>
@@ -350,6 +355,40 @@
                 console.error("Geocoding error:", error);
             }
         }
+        
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                errorText.textContent = "Geolocation is not supported by your browser.";
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            const liveLocationBtn = document.getElementById('live-location-btn');
+            liveLocationBtn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    updateCoordinateInputs(lat, lon);
+                    
+                    if (map && marker) {
+                        const newLatLng = L.latLng(lat, lon);
+                        map.setView(newLatLng, 13);
+                        marker.setLatLng(newLatLng);
+                    }
+                    
+                    reverseGeocode(lat, lon);
+                    liveLocationBtn.disabled = false;
+                }, 
+                (err) => {
+                    errorText.textContent = `Unable to retrieve location: ${err.message}`;
+                    errorMessage.classList.remove('hidden');
+                    liveLocationBtn.disabled = false;
+                }
+            );
+        }
 
         function drawRadarChart(data) {
             const ctx = canvas.getContext('2d');
@@ -580,6 +619,9 @@
             form.addEventListener('submit', handleForecastSubmit);
             locationInput.addEventListener('change', (e) => geocodeLocation(e.target.value));
             
+            const liveLocationBtn = document.getElementById('live-location-btn');
+            liveLocationBtn.addEventListener('click', getCurrentLocation);
+
             if (typeof L !== 'undefined') {
                 initializeMap();
             } else {
