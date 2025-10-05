@@ -60,6 +60,18 @@
             height: 300px; 
             border-radius: 0.75rem; 
             margin-top: 1rem;
+            background-color: #374151;
+        }
+        .custom-div-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .leaflet-div-icon {
+            background: transparent;
+            border: none;
         }
     </style>
 </head>
@@ -78,27 +90,54 @@
 
                 <form id="forecast-form" class="space-y-6">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-gray-300">Forecast Type</label>
+                        <div class="flex items-center space-x-2 p-1 bg-gray-700 rounded-lg">
+                            <button id="mode-spot" type="button" class="flex-1 p-2 rounded-md text-sm font-semibold transition-colors bg-accent-cyan text-space-blue">Spot</button>
+                            <button id="mode-route" type="button" class="flex-1 p-2 rounded-md text-sm font-semibold transition-colors text-text-light">Route</button>
+                        </div>
+                    </div>
+
+                    <div id="spot-container">
+                        <label for="location" class="block text-sm font-medium mb-1 text-gray-300">Location Name (City/Site)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="location" value="Grand Canyon National Park" class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                            <button type="button" id="current-location-btn" class="flex-shrink-0 p-3 bg-accent-cyan/80 hover:bg-accent-cyan rounded-lg transition-colors disabled:opacity-50" title="Use my current location (one-time)">
+                                <svg class="w-5 h-5 text-space-blue" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="route-container" class="hidden space-y-4">
                         <div>
-                            <label for="location" class="block text-sm font-medium mb-1 text-gray-300">Location Name (City/Site)</label>
-                             <div class="flex items-center gap-2">
-                                <input type="text" id="location" value="Grand Canyon National Park" required class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
-                                <button type="button" id="current-location-btn" class="flex-shrink-0 p-3 bg-accent-cyan/80 hover:bg-accent-cyan rounded-lg transition-colors disabled:opacity-50" title="Use my current location (one-time)">
+                            <label for="start-location" class="block text-sm font-medium mb-1 text-gray-300">Starting Location</label>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="start-location" placeholder="e.g., Phoenix, AZ" class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                                <button type="button" id="current-start-btn" class="flex-shrink-0 p-3 bg-accent-cyan/80 hover:bg-accent-cyan rounded-lg transition-colors disabled:opacity-50" title="Use current location as start">
                                     <svg class="w-5 h-5 text-space-blue" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
                                 </button>
                             </div>
                         </div>
                         <div>
-                            <label for="date" class="block text-sm font-medium mb-1 text-gray-300">Date of Event</label>
-                            <input type="date" id="date" required class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                            <label for="end-location" class="block text-sm font-medium mb-1 text-gray-300">Destination</label>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="end-location" placeholder="e.g., Grand Canyon Village" class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                                <button type="button" id="current-end-btn" class="flex-shrink-0 p-3 bg-accent-cyan/80 hover:bg-accent-cyan rounded-lg transition-colors disabled:opacity-50" title="Use current location as destination">
+                                    <svg class="w-5 h-5 text-space-blue" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <div id="map-container" class="rounded-xl"></div>
-                    <p class="text-sm text-gray-400">Drag the marker or type a location to set the precise coordinates.</p>
+                    <p id="map-helper-text" class="text-sm text-gray-400">Drag the marker or type a location to set the precise coordinates.</p>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-1">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="date" class="block text-sm font-medium mb-1 text-gray-300">Date of Event</label>
+                            <input type="date" id="date" required class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
+                        </div>
+                        <div>
                             <label for="activity" class="block text-sm font-medium mb-1 text-gray-300">Activity Type</label>
                             <select id="activity" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light">
                                 <option value="hiking">Hiking / Backpacking</option>
@@ -107,15 +146,10 @@
                                 <option value="outdoor_sport">Outdoor Sports / Running</option>
                             </select>
                         </div>
-                        <div>
-                            <label for="lat" class="block text-sm font-medium mb-1 text-gray-300">Latitude (N/S)</label>
-                            <input type="number" id="lat" value="36.10" step="0.01" readonly class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-text-light opacity-70">
-                        </div>
-                        <div>
-                            <label for="lon" class="block text-sm font-medium mb-1 text-gray-300">Longitude (E/W)</label>
-                            <input type="number" id="lon" value="-112.11" step="0.01" readonly class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-text-light opacity-70">
-                        </div>
                     </div>
+
+                    <input type="hidden" id="lat" value="36.10">
+                    <input type="hidden" id="lon" value="-112.11">
                     
                     <div>
                         <button type="button" id="live-location-btn" class="w-full flex items-center justify-center gap-2 p-3 mt-2 bg-accent-cyan/80 hover:bg-accent-cyan rounded-lg transition-colors text-space-blue font-semibold disabled:opacity-50">
@@ -131,27 +165,27 @@
                         <div class="flex items-center space-x-4">
                             <label for="threshold-hot" class="w-24 text-sm text-gray-300">Very Hot</label>
                             <input type="range" id="threshold-hot" min="20" max="45" value="32" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                            <span id="value-hot" class="w-12 text-center font-bold text-accent-red">32 °C</span>
+                            <span id="value-hot" class="w-16 text-center font-bold text-accent-red">32 °C</span>
                         </div>
                         <div class="flex items-center space-x-4">
                             <label for="threshold-cold" class="w-24 text-sm text-gray-300">Very Cold</label>
                             <input type="range" id="threshold-cold" min="-10" max="15" value="5" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                            <span id="value-cold" class="w-12 text-center font-bold text-accent-cyan">5 °C</span>
+                            <span id="value-cold" class="w-16 text-center font-bold text-accent-cyan">5 °C</span>
                         </div>
                         <div class="flex items-center space-x-4">
                             <label for="threshold-windy" class="w-24 text-sm text-gray-300">Very Windy</label>
                             <input type="range" id="threshold-windy" min="10" max="80" value="45" step="5" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                            <span id="value-windy" class="w-12 text-center font-bold text-yellow-500">45 km/h</span>
+                            <span id="value-windy" class="w-16 text-center font-bold text-yellow-500">45 km/h</span>
                         </div>
                         <div class="flex items-center space-x-4">
                             <label for="threshold-wet" class="w-24 text-sm text-gray-300">Very Wet</label>
                             <input type="range" id="threshold-wet" min="1" max="50" value="10" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                            <span id="value-wet" class="w-12 text-center font-bold text-blue-500">10 mm/day</span>
+                            <span id="value-wet" class="w-16 text-center font-bold text-blue-500">10 mm/day</span>
                         </div>
                         <div class="flex items-center space-x-4">
                             <label for="threshold-humidity" class="w-24 text-sm text-gray-300">Very Humid</label>
                             <input type="range" id="threshold-humidity" min="50" max="100" value="85" step="1" class="flex-grow h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                            <span id="value-humidity" class="w-12 text-center font-bold text-pink-500">85 %</span>
+                            <span id="value-humidity" class="w-16 text-center font-bold text-pink-500">85 %</span>
                         </div>
                     </div>
                     
@@ -171,7 +205,7 @@
 
                 <div id="risk-display" class="hidden">
                     <div class="text-center mb-6">
-                        <p class="text-xl text-gray-400">Overall Adversity Score:</p>
+                        <p id="risk-title" class="text-xl text-gray-400">Overall Adversity Score:</p>
                         <div id="overall-score" class="text-6xl font-extrabold" style="color: #4ade80;">40%</div>
                         <p id="overall-message" class="text-xl font-medium mt-1 text-green-400">Low Risk</p>
                     </div>
@@ -189,8 +223,8 @@
                 </div>
                 
                 <div id="actual-forecast-display" class="hidden mt-6 p-4 bg-gray-800/50 rounded-lg">
-                    <h3 class="text-lg font-semibold text-cyan-400 mb-2">Live Forecast for Selected Date:</h3>
-                    <div id="actual-forecast-content" class="hidden space-y-2 text-sm text-gray-300"></div>
+                    <h3 id="actual-forecast-title" class="text-lg font-semibold text-cyan-400 mb-2">Live Forecast for Selected Date:</h3>
+                    <div id="actual-forecast-content" class="space-y-2 text-sm text-gray-300"></div>
                 </div>
 
                 <div id="notification-control" class="hidden mt-6 text-center border-t border-gray-700 pt-6">
@@ -201,7 +235,7 @@
                 </div>
 
                 <div id="welcome-message" class="text-center py-10">
-                    <p class="text-gray-400">Enter your location, date, and personalized thresholds to run a forecast.</p>
+                    <p class="text-gray-400">Select a forecast type, location, and date to begin.</p>
                 </div>
 
                 <div id="error-message" class="hidden mt-6 p-3 bg-red-800/30 border border-red-700 text-accent-red rounded-lg">
@@ -210,6 +244,42 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div id="ai-chat-container" class="fixed bottom-6 right-6 z-50">
+        <button id="chat-toggle-btn" class="w-16 h-16 bg-accent-cyan rounded-full flex items-center justify-center cursor-pointer shadow-xl transform hover:scale-110 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-space-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+        </button>
+
+        <div id="chat-window" class="hidden absolute bottom-20 right-0 w-80 md:w-96 bg-space-blue rounded-xl shadow-2xl flex flex-col transform transition-all duration-300 origin-bottom-right scale-95 opacity-0">
+            <div class="flex justify-between items-center p-4 bg-gray-800 rounded-t-xl">
+                <h3 class="font-bold text-lg text-accent-cyan">AI Weather Assistant</h3>
+                <button id="chat-close-btn" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 h-96">
+                <div class="p-3 rounded-lg bg-accent-cyan/20 text-text-light max-w-xs">
+                    <p>Hi there! 👋 After generating a forecast, ask me anything about it. For example: "What should I pack?" or "Is it safe for hiking?"</p>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-gray-700">
+                <form id="chat-form" class="flex items-center gap-2">
+                    <input type="text" id="chat-input" placeholder="Ask about the weather..." class="flex-grow p-2 rounded-lg bg-gray-700 border border-gray-600 focus:ring-accent-cyan focus:border-accent-cyan text-text-light" autocomplete="off">
+                    <button type="submit" class="p-2 bg-accent-cyan rounded-lg text-space-blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -228,11 +298,119 @@
         const notificationControl = document.getElementById('notification-control');
         const notifyBtn = document.getElementById('notify-btn');
         const notifyStatus = document.getElementById('notify-status');
+        const actualForecastDisplay = document.getElementById('actual-forecast-display');
+        const actualForecastContent = document.getElementById('actual-forecast-content');
+        const modeSpotBtn = document.getElementById('mode-spot');
+        const modeRouteBtn = document.getElementById('mode-route');
+        const spotContainer = document.getElementById('spot-container');
+        const routeContainer = document.getElementById('route-container');
+        const startLocationInput = document.getElementById('start-location');
+        const endLocationInput = document.getElementById('end-location');
+        const mapHelperText = document.getElementById('map-helper-text');
+        // AI Chatbot Elements
+        const chatToggleBtn = document.getElementById('chat-toggle-btn');
+        const chatWindow = document.getElementById('chat-window');
+        const chatCloseBtn = document.getElementById('chat-close-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        
         let map;
-        let marker;
+        let marker, startMarker, endMarker, routeLine;
         let locationWatchId = null;
+        let currentMode = 'spot';
+        let weatherMarkersLayer = L.layerGroup();
+
         const thresholds = { hot: document.getElementById('threshold-hot'), cold: document.getElementById('threshold-cold'), windy: document.getElementById('threshold-windy'), wet: document.getElementById('threshold-wet'), humidity: document.getElementById('threshold-humidity') };
         const valueDisplays = { hot: document.getElementById('value-hot'), cold: document.getElementById('value-cold'), windy: document.getElementById('value-windy'), wet: document.getElementById('value-wet'), humidity: document.getElementById('value-humidity') };
+
+        // --- AI Chatbot Logic ---
+        const API_KEY = "AIzaSyCpA7AUwjMEM0Up9K1QtCI1UbZUxhMfgoE";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        let currentForecastContext = "No forecast has been generated yet. Please advise the user to generate a forecast first.";
+
+        function toggleChatWindow() {
+            if (chatWindow.classList.contains('hidden')) {
+                chatWindow.classList.remove('hidden');
+                setTimeout(() => {
+                    chatWindow.classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            } else {
+                chatWindow.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    chatWindow.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function appendMessage(text, sender) {
+            const messageWrapper = document.createElement('div');
+            const messageEl = document.createElement('div');
+            messageEl.textContent = text;
+            
+            if (sender === 'user') {
+                messageWrapper.className = 'flex justify-end';
+                messageEl.className = 'p-3 rounded-lg bg-gray-700 text-text-light max-w-xs break-words';
+            } else { // 'ai' or 'loader'
+                messageWrapper.className = 'flex justify-start';
+                if (text === '...') {
+                    messageEl.className = 'p-3 rounded-lg bg-accent-cyan/20 text-text-light max-w-xs animate-pulse';
+                    messageEl.id = 'ai-loader';
+                } else {
+                    messageEl.className = 'p-3 rounded-lg bg-accent-cyan/20 text-text-light max-w-xs break-words';
+                }
+            }
+            
+            messageWrapper.appendChild(messageEl);
+            chatMessages.appendChild(messageWrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function handleChatSubmit(e) {
+            e.preventDefault();
+            const userInput = chatInput.value.trim();
+            if (!userInput) return;
+
+            appendMessage(userInput, 'user');
+            chatInput.value = '';
+            appendMessage('...', 'ai'); // Loader
+
+            const fullPrompt = `You are a helpful and concise weather assistant for an app called GEOSPHERE. Your advice should be practical and safety-conscious.
+            
+            Current forecast context:
+            ${currentForecastContext}
+            
+            User's question:
+            "${userInput}"
+            
+            Based on the context and the user's question, provide a helpful suggestion or answer. If the context is missing, ask the user to generate a forecast first. Keep your response formatted with markdown for readability if needed.`;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const aiResponse = data.candidates[0].content.parts[0].text;
+                
+                const loader = document.getElementById('ai-loader');
+                if (loader) loader.parentElement.remove();
+                appendMessage(aiResponse, 'ai');
+
+            } catch (error) {
+                console.error("AI Chat Error:", error);
+                const loader = document.getElementById('ai-loader');
+                if (loader) loader.parentElement.remove();
+                appendMessage("Sorry, I'm having trouble connecting to my brain right now. Please try again later.", 'ai');
+            }
+        }
+        // --- End of AI Chatbot Logic ---
 
         function getTodayDateString() {
             const today = new Date();
@@ -251,7 +429,6 @@
         }
 
         function updateRangeValue(id, unit) { valueDisplays[id].textContent = thresholds[id].value + ' ' + unit; }
-        function updateCoordinateInputs(lat, lon) { latInput.value = lat.toFixed(4); lonInput.value = lon.toFixed(4); }
         
         async function reverseGeocode(lat, lon) {
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
@@ -259,32 +436,14 @@
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Reverse geocoding failed.');
                 const data = await response.json();
-                locationInput.value = data && data.display_name ? data.display_name : 'Custom Location';
+                return data?.display_name || 'Custom Location';
             } catch (error) {
                 console.error("Reverse geocoding error:", error);
-                locationInput.value = 'Custom Location';
+                return 'Custom Location';
             }
         }
 
-        function initializeMap() {
-            const initialLat = parseFloat(latInput.value) || 36.10;
-            const initialLon = parseFloat(lonInput.value) || -112.11;
-            if (typeof L.map !== 'function' || !document.getElementById('map-container')) return;
-            map = L.map('map-container').setView([initialLat, initialLon], 5);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
-            marker = L.marker([initialLat, initialLon], { draggable: true }).addTo(map);
-            const stopTrackingAndReverseGeocode = (latlng) => {
-                marker.setLatLng(latlng);
-                updateCoordinateInputs(latlng.lat, latlng.lng);
-                reverseGeocode(latlng.lat, latlng.lng);
-                stopLiveLocation();
-            };
-            marker.on('dragend', (e) => stopTrackingAndReverseGeocode(marker.getLatLng()));
-            map.on('click', (e) => stopTrackingAndReverseGeocode(e.latlng));
-            setTimeout(() => map.invalidateSize(), 100);
-        }
-
-        async function geocodeLocation(locationName) {
+        async function geocodeLocation(locationName, markerToUpdate) {
             if (!locationName) return;
             const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`;
             try {
@@ -295,93 +454,316 @@
                     const { lat, lon } = data[0];
                     const newLat = parseFloat(lat);
                     const newLon = parseFloat(lon);
-                    updateCoordinateInputs(newLat, newLon);
-                    if (map && marker) {
+                    if (markerToUpdate && map) {
                         const newLatLng = L.latLng(newLat, newLon);
-                        map.setView(newLatLng, 10);
-                        marker.setLatLng(newLatLng);
+                        markerToUpdate.setLatLng(newLatLng);
+                        
+                        if (currentMode === 'route') {
+                            fetchRouteAndWeather(startMarker.getLatLng(), endMarker.getLatLng());
+                            const bounds = L.latLngBounds(startMarker.getLatLng(), endMarker.getLatLng());
+                            if (bounds.isValid()) map.fitBounds(bounds.pad(0.2));
+                        } else {
+                            map.setView(newLatLng, 10);
+                            updateCoordinateInputs(newLat, newLon);
+                        }
                     }
                 }
             } catch (error) { console.error("Geocoding error:", error); }
         }
-        
-        function fetchCurrentLocationOnce() {
-            stopLiveLocation();
-            if (!navigator.geolocation) {
-                errorText.textContent = "Geolocation is not supported by your browser.";
-                errorMessage.classList.remove('hidden');
-                return;
+
+        function createNumberedIcon(number, color = '#06b6d4') {
+            return L.divIcon({
+                html: `<div style="background-color: #1a202c; color: ${color}; border-radius: 50%; width: 28px; height: 28px; line-height: 28px; text-align: center; border: 2px solid ${color};">${number}</div>`,
+                className: 'custom-div-icon',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+        }
+
+        function initializeMap() {
+            if (map) map.remove();
+            map = L.map('map-container').setView([36.10, -112.11], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
+            weatherMarkersLayer.addTo(map);
+
+            marker = L.marker([36.10, -112.11], { draggable: true }).on('dragend', handleMarkerDrag);
+            startMarker = L.marker([34.05, -118.24], { draggable: true, icon: createNumberedIcon('S') }).on('dragend', (e) => handleRouteMarkerDrag(e, 'start'));
+            endMarker = L.marker([36.10, -112.11], { draggable: true, icon: createNumberedIcon('D') }).on('dragend', (e) => handleRouteMarkerDrag(e, 'end'));
+            routeLine = L.polyline([], { color: '#06b6d4', weight: 4, opacity: 0.8 });
+
+            switchModeUI(currentMode);
+            setTimeout(() => map.invalidateSize(), 100);
+        }
+
+        function switchModeUI(newMode) {
+            currentMode = newMode;
+            weatherMarkersLayer.clearLayers();
+            if (newMode === 'spot') {
+                spotContainer.classList.remove('hidden');
+                routeContainer.classList.add('hidden');
+                modeSpotBtn.classList.add('bg-accent-cyan', 'text-space-blue');
+                modeSpotBtn.classList.remove('text-text-light');
+                modeRouteBtn.classList.remove('bg-accent-cyan', 'text-space-blue');
+                mapHelperText.textContent = "Drag the marker or type a location to set the precise coordinates.";
+                document.getElementById('live-location-text').textContent = "Enable Live Location";
+                resetMapForSpotMode();
+            } else {
+                spotContainer.classList.add('hidden');
+                routeContainer.classList.remove('hidden');
+                modeRouteBtn.classList.add('bg-accent-cyan', 'text-space-blue');
+                modeRouteBtn.classList.remove('text-text-light');
+                modeSpotBtn.classList.remove('bg-accent-cyan', 'text-space-blue');
+                mapHelperText.textContent = "Drag the 'S' (Start) and 'D' (Destination) markers to define your route.";
+                document.getElementById('live-location-text').textContent = "Use Live Location for Start";
+                resetMapForRouteMode();
             }
-            const btn = document.getElementById('current-location-btn');
-            btn.disabled = true;
+        }
+        
+        function resetMapForSpotMode() {
+            if (!map) return;
+            [startMarker, endMarker, routeLine].forEach(layer => map.removeLayer(layer));
+            weatherMarkersLayer.clearLayers();
+            map.addLayer(marker);
+            map.setView(marker.getLatLng(), 5);
+        }
+
+        function resetMapForRouteMode() {
+            if (!map) return;
+            map.removeLayer(marker);
+            [startMarker, endMarker, routeLine].forEach(layer => map.addLayer(layer));
+            fetchRouteAndWeather(startMarker.getLatLng(), endMarker.getLatLng());
+            const bounds = L.latLngBounds(startMarker.getLatLng(), endMarker.getLatLng());
+            if (bounds.isValid()) map.fitBounds(bounds.pad(0.2));
+        }
+
+        async function handleMarkerDrag(e) {
+            const latlng = e.target.getLatLng();
+            stopLiveLocation();
+            updateCoordinateInputs(latlng.lat, latlng.lng);
+            locationInput.value = await reverseGeocode(latlng.lat, latlng.lng);
+        }
+        
+        async function handleRouteMarkerDrag(e, pointType) {
+            const latlng = e.target.getLatLng();
+            stopLiveLocation();
+            fetchRouteAndWeather(startMarker.getLatLng(), endMarker.getLatLng());
+            const name = await reverseGeocode(latlng.lat, latlng.lng);
+            if (pointType === 'start') {
+                startLocationInput.value = name;
+            } else {
+                endLocationInput.value = name;
+            }
+        }
+        
+        function updateCoordinateInputs(lat, lon) {
+            latInput.value = lat.toFixed(4);
+            lonInput.value = lon.toFixed(4);
+        }
+        
+        function fetchCurrentLocationOnce(markerToUpdate, inputToUpdate) {
+            stopLiveLocation();
+            if (!navigator.geolocation) return alert("Geolocation is not supported.");
+            
             navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    updateCoordinateInputs(lat, lon);
-                    if (map && marker) {
-                        const newLatLng = L.latLng(lat, lon);
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    const newLatLng = L.latLng(latitude, longitude);
+                    
+                    if (map && markerToUpdate) {
                         map.setView(newLatLng, 13);
-                        marker.setLatLng(newLatLng);
+                        markerToUpdate.setLatLng(newLatLng);
                     }
-                    reverseGeocode(lat, lon);
-                    btn.disabled = false;
+                    if (inputToUpdate) {
+                        inputToUpdate.value = await reverseGeocode(latitude, longitude);
+                    }
+                    if (currentMode === 'spot') {
+                        updateCoordinateInputs(latitude, longitude);
+                    }
+                    if (currentMode === 'route') {
+                        fetchRouteAndWeather(startMarker.getLatLng(), endMarker.getLatLng());
+                    }
                 },
-                (err) => {
-                    errorText.textContent = `Unable to retrieve location: ${err.message}`;
-                    errorMessage.classList.remove('hidden');
-                    btn.disabled = false;
-                }
+                (err) => { errorText.textContent = `Location Error: ${err.message}`; errorMessage.classList.remove('hidden'); }
             );
         }
 
-        function handlePositionUpdate(position) {
-            const liveLocationBtn = document.getElementById('live-location-btn');
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            updateCoordinateInputs(lat, lon);
-            locationInput.value = "Live Location Active";
-            if (map && marker) {
-                const newLatLng = L.latLng(lat, lon);
-                map.setView(newLatLng, 16);
-                marker.setLatLng(newLatLng);
-            }
-            liveLocationBtn.disabled = false;
-        }
-
-        function handlePositionError(err) { errorText.textContent = `Location Error: ${err.message}`; errorMessage.classList.remove('hidden'); stopLiveLocation(); }
-
+        function toggleLiveLocation() { (locationWatchId === null) ? startLiveLocation() : stopLiveLocation(); }
+        
         function startLiveLocation() {
-            if (!navigator.geolocation) {
-                errorText.textContent = "Geolocation is not supported.";
-                errorMessage.classList.remove('hidden');
-                return;
-            }
+            if (!navigator.geolocation) return alert("Geolocation is not supported.");
             const liveLocationBtn = document.getElementById('live-location-btn');
-            const liveLocationText = document.getElementById('live-location-text');
             liveLocationBtn.disabled = true;
-            liveLocationText.textContent = "Starting...";
-            locationWatchId = navigator.geolocation.watchPosition(handlePositionUpdate, handlePositionError, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+
+            const updateHandler = (position) => {
+                const { latitude, longitude } = position.coords;
+                const newLatLng = L.latLng(latitude, longitude);
+                map.setView(newLatLng, 16);
+                
+                if (currentMode === 'spot') {
+                    marker.setLatLng(newLatLng);
+                    updateCoordinateInputs(latitude, longitude);
+                    locationInput.value = "Live Location Active";
+                } else {
+                    startMarker.setLatLng(newLatLng);
+                    fetchRouteAndWeather(startMarker.getLatLng(), endMarker.getLatLng());
+                    startLocationInput.value = "Live Location (Start)";
+                }
+            };
+            
+            locationWatchId = navigator.geolocation.watchPosition(updateHandler, (err) => {
+                errorText.textContent = `Location Error: ${err.message}`;
+                errorMessage.classList.remove('hidden');
+                stopLiveLocation();
+            }, { enableHighAccuracy: true });
+
             liveLocationBtn.classList.replace('bg-accent-cyan/80', 'bg-accent-red/80');
             liveLocationBtn.classList.replace('hover:bg-accent-cyan', 'hover:bg-accent-red');
-            liveLocationText.textContent = "Stop Live Location";
+            document.getElementById('live-location-text').textContent = "Stop Live Location";
+            liveLocationBtn.disabled = false;
         }
-
+        
         function stopLiveLocation() {
             if (locationWatchId !== null) {
                 navigator.geolocation.clearWatch(locationWatchId);
                 locationWatchId = null;
             }
             const liveLocationBtn = document.getElementById('live-location-btn');
-            const liveLocationText = document.getElementById('live-location-text');
             liveLocationBtn.classList.replace('bg-accent-red/80', 'bg-accent-cyan/80');
             liveLocationBtn.classList.replace('hover:bg-accent-red', 'hover:bg-accent-cyan');
-            liveLocationText.textContent = "Enable Live Location";
-            liveLocationBtn.disabled = false;
+            document.getElementById('live-location-text').textContent = currentMode === 'spot' ? "Enable Live Location" : "Use Live Location for Start";
         }
 
-        function toggleLiveLocation() { (locationWatchId === null) ? startLiveLocation() : stopLiveLocation(); }
+        function getWeatherIcon(weathercode) {
+            if ([0, 1].includes(weathercode)) return '☀️'; 
+            if ([2].includes(weathercode)) return '🌤️';
+            if ([3].includes(weathercode)) return '☁️';
+            if ([45, 48].includes(weathercode)) return '🌫️';
+            if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(weathercode)) return '🌧️';
+            if ([71, 73, 75, 77, 85, 86].includes(weathercode)) return '❄️';
+            if ([95, 96, 99].includes(weathercode)) return '⛈️';
+            return '❔';
+        }
+
+        async function fetchRouteAndWeather(startCoords, endCoords) {
+            weatherMarkersLayer.clearLayers();
+            const url = `https://router.project-osrm.org/route/v1/driving/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.routes && data.routes.length > 0) {
+                    const polylinePoints = data.routes[0].geometry.coordinates.map(p => [p[1], p[0]]);
+                    routeLine.setLatLngs(polylinePoints);
+
+                    const waypoints = [
+                        polylinePoints[Math.floor(polylinePoints.length * 0.25)],
+                        polylinePoints[Math.floor(polylinePoints.length * 0.5)],
+                        polylinePoints[Math.floor(polylinePoints.length * 0.75)]
+                    ].filter(p => p);
+
+                    const date = document.getElementById('date').value;
+                    waypoints.forEach(async (point) => {
+                        try {
+                            const weatherData = await getWeatherData(point[0], point[1], date);
+                            const iconEmoji = getWeatherIcon(weatherData.weathercode);
+                            const avgTemp = Math.round((weatherData.temp_max + weatherData.temp_min) / 2);
+                            const weatherIcon = L.divIcon({
+                                html: `<div style="background: #1f2937E6; backdrop-filter: blur(4px); border-radius: 8px; padding: 2px 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); border: 1px solid #4b5563; display: flex; align-items: center; gap: 5px; color: white; font-size: 14px; font-weight: 600;"><span>${iconEmoji}</span><span>${avgTemp}°</span></div>`,
+                                className: '',
+                                iconSize: 'auto'
+                            });
+                            L.marker(point, { icon: weatherIcon }).addTo(weatherMarkersLayer);
+                        } catch (err) {
+                            console.error("Failed to get weather for waypoint:", err);
+                        }
+                    });
+                } else {
+                    routeLine.setLatLngs([startCoords, endCoords]);
+                }
+            } catch (error) {
+                console.error("OSRM routing failed:", error);
+                routeLine.setLatLngs([startCoords, endCoords]);
+            }
+        }
+
+        function getWeatherDescription(code) {
+             const d = { 0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 48: 'Depositing rime fog', 51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle', 56: 'Light freezing drizzle', 57: 'Dense freezing drizzle', 61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain', 66: 'Light freezing rain', 67: 'Heavy freezing rain', 71: 'Slight snow fall', 73: 'Moderate snow fall', 75: 'Heavy snow fall', 77: 'Snow grains', 80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers', 85: 'Slight snow showers', 86: 'Heavy snow showers', 95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail' };
+             return d[code] || 'Unknown condition';
+        }
+
+        async function getWeatherData(lat, lon, date) {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&hourly=relativehumidity_2m&timezone=auto&start_date=${date}&end_date=${date}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Weather API request failed: ${response.status}`);
+                const data = await response.json();
+                if (!data.daily?.time?.length) throw new Error('No weather data returned.');
+                const maxHumidity = Math.max(...data.hourly.relativehumidity_2m);
+                return { temp_max: data.daily.temperature_2m_max[0], temp_min: data.daily.temperature_2m_min[0], wind: data.daily.windspeed_10m_max[0], precip: data.daily.precipitation_sum[0], weathercode: data.daily.weathercode[0], humidity: maxHumidity };
+            } catch (error) { throw new Error("Could not fetch weather data. Check connection and coordinates."); }
+        }
+
+        function calculateAdversityScores(forecast, userThresholds) {
+            const safeDivide = (numerator, denominator) => denominator == 0 ? (numerator > 0 ? 100 : 0) : (numerator / denominator);
+            
+            let hot = (forecast.temp_max / parseFloat(userThresholds.hot.value)) * 100;
+            let cold;
+            const coldThresh = parseFloat(userThresholds.cold.value);
+            if (forecast.temp_min <= coldThresh) {
+                cold = 100;
+            } else if (forecast.temp_min > coldThresh + 15) {
+                cold = 0;
+            } else {
+                cold = 100 * (1 - (forecast.temp_min - coldThresh) / 15);
+            }
+
+            let windy = safeDivide(forecast.wind, parseFloat(userThresholds.windy.value)) * 100;
+            let wet = safeDivide(forecast.precip, parseFloat(userThresholds.wet.value)) * 100;
+            let humid = safeDivide(forecast.humidity, parseFloat(userThresholds.humidity.value)) * 100;
+
+            const scores = {
+                hot_likelihood: Math.round(Math.min(100, Math.max(0, hot))),
+                cold_likelihood: Math.round(Math.min(100, Math.max(0, cold))),
+                windy_likelihood: Math.round(Math.min(100, Math.max(0, windy))),
+                wet_likelihood: Math.round(Math.min(100, Math.max(0, wet))),
+                humidity_likelihood: Math.round(Math.min(100, Math.max(0, humid))),
+            };
+            
+            scores.overall_adversity = Math.round(Math.max(scores.hot_likelihood, scores.cold_likelihood, scores.windy_likelihood, scores.wet_likelihood, scores.humidity_likelihood));
+            return scores;
+        }
         
+        function renderResults(data) {
+            loadingIndicator.classList.add('hidden');
+            welcomeMessage.classList.add('hidden');
+            riskDisplay.classList.remove('hidden');
+            notificationControl.classList.remove('hidden');
+            actualForecastDisplay.classList.remove('hidden');
+
+            const overallScoreEl = document.getElementById('overall-score');
+            const overallMessageEl = document.getElementById('overall-message');
+            const overall = data.overall_adversity;
+            let color, message;
+            if (overall < 20) { color = '#10b981'; message = 'Very Low Risk'; } 
+            else if (overall < 40) { color = '#4ade80'; message = 'Low Risk'; } 
+            else if (overall < 60) { color = '#facc15'; message = 'Moderate Risk'; } 
+            else if (overall < 80) { color = '#f97316'; message = 'High Risk'; } 
+            else { color = '#ef4444'; message = 'Extreme Risk'; }
+            overallScoreEl.textContent = `${overall}%`;
+            overallScoreEl.style.color = color;
+            overallMessageEl.textContent = message;
+            overallMessageEl.style.color = color;
+
+            ['hot', 'cold', 'windy', 'wet', 'humidity'].forEach(risk => {
+                document.getElementById(`risk-${risk}`).querySelector('span:last-child').textContent = `${data[`${risk}_likelihood`]}%`;
+            });
+            drawRadarChart(data);
+        }
+
+        function renderActualForecast(data) {
+            const desc = getWeatherDescription(data.weathercode);
+            actualForecastContent.innerHTML = `<p><strong>Condition:</strong> ${desc}</p><p><strong>Temperature:</strong> ${data.temp_min}°C to ${data.temp_max}°C</p><p><strong>Max Humidity:</strong> ${data.humidity}%</p><p><strong>Max Wind Speed:</strong> ${data.wind} km/h</p><p><strong>Total Precipitation:</strong> ${data.precip} mm</p>`;
+        }
+
         function drawRadarChart(data) {
             const ctx = canvas.getContext('2d');
             const W = canvas.width, H = canvas.height;
@@ -409,104 +791,92 @@
             ctx.closePath(); ctx.stroke(); ctx.fill();
         }
 
-        function getWeatherDescription(code) {
-            const d = { 0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 48: 'Depositing rime fog', 51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle', 56: 'Light freezing drizzle', 57: 'Dense freezing drizzle', 61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain', 66: 'Light freezing rain', 67: 'Heavy freezing rain', 71: 'Slight snow fall', 73: 'Moderate snow fall', 75: 'Heavy snow fall', 77: 'Snow grains', 80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers', 85: 'Slight snow showers', 86: 'Heavy snow showers', 95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail' };
-            return d[code] || 'Unknown condition';
-        }
-
-        async function getWeatherData(lat, lon, date) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&hourly=relativehumidity_2m&timezone=auto&start_date=${date}&end_date=${date}`;
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Weather API request failed: ${response.status}`);
-                const data = await response.json();
-                if (!data.daily || !data.daily.time || data.daily.time.length === 0) throw new Error('No weather data returned.');
-                const maxHumidity = Math.max(...data.hourly.relativehumidity_2m);
-                return { temp_max: data.daily.temperature_2m_max[0], temp_min: data.daily.temperature_2m_min[0], wind: data.daily.windspeed_10m_max[0], precip: data.daily.precipitation_sum[0], weathercode: data.daily.weathercode[0], humidity: maxHumidity };
-            } catch (error) { throw new Error("Could not fetch weather data. Check connection and coordinates."); }
-        }
-
-        function calculateAdversityScores(forecast, userThresholds) {
-            const hot = Math.round(Math.min(100, Math.max(0, (forecast.temp_max / userThresholds.hot.value) * 100)));
-            const cold = Math.round(Math.min(100, Math.max(0, (userThresholds.cold.value / forecast.temp_min) * 100)));
-            const windy = Math.round(Math.min(100, Math.max(0, (forecast.wind / userThresholds.windy.value) * 100)));
-            const wet = Math.round(Math.min(100, Math.max(0, (forecast.precip / userThresholds.wet.value) * 100)));
-            const humid = Math.round(Math.min(100, Math.max(0, (forecast.humidity / userThresholds.humidity.value) * 100)));
-            const overall = Math.round((hot + cold + windy + wet + humid) / 5);
-            return { hot_likelihood: hot, cold_likelihood: cold, windy_likelihood: windy, wet_likelihood: wet, humidity_likelihood: humid, overall_adversity: overall };
-        }
-
-        function renderResults(data) {
-            loadingIndicator.classList.add('hidden');
-            welcomeMessage.classList.add('hidden');
-            riskDisplay.classList.remove('hidden');
-            notificationControl.classList.remove('hidden');
-            const overallScoreEl = document.getElementById('overall-score');
-            const overallMessageEl = document.getElementById('overall-message');
-            const overall = data.overall_adversity;
-            let color, message;
-            if (overall < 20) { color = '#10b981'; message = 'Very Low Risk'; } 
-            else if (overall < 40) { color = '#4ade80'; message = 'Low Risk'; } 
-            else if (overall < 60) { color = '#facc15'; message = 'Moderate Risk'; } 
-            else if (overall < 80) { color = '#f97316'; message = 'High Risk'; } 
-            else { color = '#ef4444'; message = 'Extreme Risk'; }
-            overallScoreEl.textContent = `${overall}%`;
-            overallScoreEl.style.color = color;
-            overallMessageEl.textContent = message;
-            overallMessageEl.style.color = color;
-            ['hot', 'cold', 'windy', 'wet', 'humidity'].forEach(risk => {
-                document.getElementById(`risk-${risk}`).querySelector('span:last-child').textContent = `${data[`${risk}_likelihood`]}%`;
-            });
-            drawRadarChart(data);
-        }
-
-        function renderActualForecast(data) {
-            const contentEl = document.getElementById('actual-forecast-content');
-            const desc = getWeatherDescription(data.weathercode);
-            contentEl.innerHTML = `<p><strong>Condition:</strong> ${desc}</p><p><strong>Temperature:</strong> ${data.temp_min}°C to ${data.temp_max}°C</p><p><strong>Max Humidity:</strong> ${data.humidity}%</p><p><strong>Max Wind Speed:</strong> ${data.wind} km/h</p><p><strong>Total Precipitation:</strong> ${data.precip} mm</p>`;
-            contentEl.classList.remove('hidden');
-        }
-
         async function handleForecastSubmit(e) {
             e.preventDefault();
-            ['hidden', 'risk-display', 'welcome-message', 'actual-forecast-display', 'actual-forecast-content'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
-            errorMessage.classList.add('hidden');
+            [riskDisplay, errorMessage, actualForecastDisplay].forEach(el => el.classList.add('hidden'));
+            welcomeMessage.classList.add('hidden');
             loadingIndicator.classList.remove('hidden');
             submitButton.disabled = true;
-            submitButton.setAttribute('aria-busy', 'true');
             submitButton.textContent = 'Fetching Live Forecast...';
-            const date = document.getElementById('date').value;
+
             try {
-                const forecastData = await getWeatherData(latInput.value, lonInput.value, date);
+                let forecastLat, forecastLon;
+                const date = document.getElementById('date').value;
+
+                if (currentMode === 'spot') {
+                    forecastLat = latInput.value;
+                    forecastLon = lonInput.value;
+                    document.getElementById('actual-forecast-title').textContent = `Live Forecast for ${locationInput.value}:`;
+                    document.getElementById('risk-title').textContent = `Overall Adversity Score:`;
+                } else {
+                    const startName = startLocationInput.value;
+                    const endName = endLocationInput.value;
+                    if (!startName || !endName) throw new Error("Please provide both a start and destination.");
+                    
+                    const startCoords = startMarker.getLatLng();
+                    const endCoords = endMarker.getLatLng();
+                    forecastLat = (startCoords.lat + endCoords.lat) / 2;
+                    forecastLon = (startCoords.lng + endCoords.lng) / 2;
+
+                    document.getElementById('actual-forecast-title').textContent = `Forecast for Route Midpoint:`;
+                    document.getElementById('risk-title').textContent = `Route Adversity Score:`;
+                }
+                const forecastData = await getWeatherData(forecastLat, forecastLon, date);
                 const adversityScores = calculateAdversityScores(forecastData, thresholds);
                 renderResults(adversityScores);
                 renderActualForecast(forecastData);
+                
+                // Update AI Chatbot Context
+                const locationName = currentMode === 'spot' ? locationInput.value : `the route from ${startLocationInput.value || 'start'} to ${endLocationInput.value || 'destination'}`;
+                const weatherDesc = getWeatherDescription(forecastData.weathercode);
+                currentForecastContext = `
+                - Location: ${locationName}
+                - Date: ${date}
+                - Condition: ${weatherDesc}
+                - Temperature Range: ${forecastData.temp_min}°C to ${forecastData.temp_max}°C
+                - Max Wind: ${forecastData.wind} km/h
+                - Precipitation: ${forecastData.precip} mm
+                - Max Humidity: ${forecastData.humidity}%
+                - Overall Adversity Score: ${adversityScores.overall_adversity}% (The highest likelihood of any single adverse condition).
+                - Adversity Breakdown (Likelihood of being 'Very'): Hot: ${adversityScores.hot_likelihood}%, Cold: ${adversityScores.cold_likelihood}%, Windy: ${adversityScores.windy_likelihood}%, Wet: ${adversityScores.wet_likelihood}%, Humid: ${adversityScores.humidity_likelihood}%.`;
+
             } catch (error) {
                 loadingIndicator.classList.add('hidden');
                 errorMessage.classList.remove('hidden');
                 errorText.textContent = error.message || "An unknown error occurred.";
-                welcomeMessage.classList.remove('hidden');
             } finally {
                 submitButton.disabled = false;
-                submitButton.setAttribute('aria-busy', 'false');
                 submitButton.textContent = 'Get Adversity Likelihood';
             }
         }
-
+        
         async function sendWeatherNotification() {
-            const lat = parseFloat(latInput.value);
-            const lon = parseFloat(lonInput.value);
-            if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-                notifyStatus.textContent = 'Waiting for a location fix... Please try again in a moment.';
-                if (navigator.vibrate) {
-                    navigator.vibrate(100);
+            let lat, lon, title;
+
+            if (currentMode === 'spot') {
+                lat = parseFloat(latInput.value);
+                lon = parseFloat(lonInput.value);
+                title = `Weather Alert for ${locationInput.value}`;
+            } else {
+                const startCoords = startMarker.getLatLng();
+                const endCoords = endMarker.getLatLng();
+                if (!startCoords || !endCoords) {
+                    notifyStatus.textContent = 'Please set a start and end point for the route.';
+                    return;
                 }
+                lat = (startCoords.lat + endCoords.lat) / 2;
+                lon = (startCoords.lng + endCoords.lng) / 2;
+                title = `Weather Alert for Route Midpoint`;
+            }
+
+            if (isNaN(lat) || isNaN(lon)) {
+                notifyStatus.textContent = 'Invalid location coordinates.';
                 return;
             }
+
             notifyStatus.textContent = 'Fetching latest alert data...';
             try {
                 const weatherData = await getWeatherData(lat, lon, getTodayDateString());
-                const title = `Weather Alert for ${locationInput.value}`;
                 const body = `Forecast: ${getWeatherDescription(weatherData.weathercode)}. Temp: ${weatherData.temp_min}°C to ${weatherData.temp_max}°C.`;
                 const icon = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>';
                 new Notification(title, { body, icon, vibrate: [200, 100, 200] });
@@ -550,28 +920,40 @@
                 });
             }
         }
-
+        
         document.addEventListener('DOMContentLoaded', () => {
             setMinDate();
+            initializeMap();
+
             const rangeIds = ['hot', 'cold', 'windy', 'wet', 'humidity'];
             const units = ['°C', '°C', 'km/h', 'mm/day', '%'];
             rangeIds.forEach((id, i) => {
                 thresholds[id].addEventListener('input', () => updateRangeValue(id, units[i]));
                 updateRangeValue(id, units[i]);
             });
+
             form.addEventListener('submit', handleForecastSubmit);
-            locationInput.addEventListener('change', (e) => {
-                geocodeLocation(e.target.value);
-                stopLiveLocation();
-            });
-            document.getElementById('current-location-btn').addEventListener('click', fetchCurrentLocationOnce);
+            
+            locationInput.addEventListener('change', (e) => geocodeLocation(e.target.value, marker));
+            startLocationInput.addEventListener('change', (e) => geocodeLocation(e.target.value, startMarker));
+            endLocationInput.addEventListener('change', (e) => geocodeLocation(e.target.value, endMarker));
+            
+            document.getElementById('current-location-btn').addEventListener('click', () => fetchCurrentLocationOnce(marker, locationInput));
+            document.getElementById('current-start-btn').addEventListener('click', () => fetchCurrentLocationOnce(startMarker, startLocationInput));
+            document.getElementById('current-end-btn').addEventListener('click', () => fetchCurrentLocationOnce(endMarker, endLocationInput));
             document.getElementById('live-location-btn').addEventListener('click', toggleLiveLocation);
             notifyBtn.addEventListener('click', handleNotificationClick);
+            
+            modeSpotBtn.addEventListener('click', () => switchModeUI('spot'));
+            modeRouteBtn.addEventListener('click', () => switchModeUI('route'));
+
+            // Chatbot Listeners
+            chatToggleBtn.addEventListener('click', toggleChatWindow);
+            chatCloseBtn.addEventListener('click', toggleChatWindow);
+            chatForm.addEventListener('submit', handleChatSubmit);
+
             setupNotificationButton();
-            if (typeof L !== 'undefined') { initializeMap(); }
         });
-        
-        window.onload = () => { if (typeof L !== 'undefined' && !map) initializeMap(); };
     </script>
 </body>
 </html>
